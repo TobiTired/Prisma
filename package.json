@@ -40,7 +40,6 @@
       "!node_modules/canvas{,/**}"
     ],
     "win": {
-      "artifactName": "TobiArt-${version}-${arch}-${name}.${ext}",
       "target": [
         "nsis",
         "portable"
@@ -54,6 +53,7 @@
       ]
     },
     "nsis": {
+      "artifactName": "TobiArt-${version}-${arch}-Setup.${ext}",
       "oneClick": false,
       "perMachine": false,
       "allowElevation": true,
@@ -63,6 +63,9 @@
       "shortcutName": "TobiArt",
       "deleteAppDataOnUninstall": false,
       "differentialPackage": true
+    },
+    "portable": {
+      "artifactName": "TobiArt-${version}-${arch}-Portable.${ext}"
     },
     "publish": {
       "provider": "github",
