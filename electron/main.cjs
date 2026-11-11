@@ -21,10 +21,21 @@ let pendingProjectPath = process.argv.find(
   (arg) => arg.toLowerCase().endsWith(".tobiart") && !arg.startsWith("--"),
 );
 const settingsPath = () => path.join(app.getPath("userData"), "settings.json");
+const legacySettingsPaths = () => [
+  path.join(app.getPath("appData"), "TobiArt", "settings.json"),
+  path.join(app.getPath("appData"), "tobiart", "settings.json"),
+];
 async function readSettings() {
   try {
     return JSON.parse(await fs.readFile(settingsPath(), "utf8"));
   } catch {
+    for (const legacyPath of legacySettingsPaths()) {
+      try {
+        const settings = JSON.parse(await fs.readFile(legacyPath, "utf8"));
+        await writeSettings(settings);
+        return settings;
+      } catch {}
+    }
     return {};
   }
 }
@@ -39,6 +50,7 @@ function createWindow() {
     minWidth: 1050,
     minHeight: 680,
     backgroundColor: "#17181d",
+    title: "Prisma",
     titleBarStyle: "hiddenInset",
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
@@ -211,7 +223,7 @@ ipcMain.handle("save-project", async (_, { project, currentPath, saveAs }) => {
   if (!target || saveAs) {
     const r = await dialog.showSaveDialog(win, {
       defaultPath: `${project.name || "Untitled"}.tobiart`,
-      filters: [{ name: "TobiArt Project", extensions: ["tobiart"] }],
+      filters: [{ name: "Prisma Project", extensions: ["tobiart"] }],
     });
     if (r.canceled) return null;
     target = r.filePath;
@@ -253,7 +265,7 @@ ipcMain.handle("open-project", async (_, supplied) => {
     if (!target) {
       const r = await dialog.showOpenDialog(win, {
         properties: ["openFile"],
-        filters: [{ name: "TobiArt Project", extensions: ["tobiart"] }],
+        filters: [{ name: "Prisma Project", extensions: ["tobiart"] }],
       });
       if (r.canceled) return null;
       target = r.filePaths[0];
@@ -261,7 +273,7 @@ ipcMain.handle("open-project", async (_, supplied) => {
     const zip = await JSZip.loadAsync(await fs.readFile(target));
     const manifest = zip.file("project.json");
     if (!manifest)
-      throw new Error("This file does not contain a TobiArt project manifest.");
+      throw new Error("This file does not contain a compatible Prisma project manifest.");
     const project = JSON.parse(await manifest.async("string"));
     if (
       !project ||

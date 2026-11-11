@@ -1,95 +1,52 @@
-# TobiArt V0.2.4
+# Prisma v0.3.0
 
-A local-first desktop graphics editor focused on fast YouTube thumbnail creation. Projects save as self-contained `.tobiart` packages containing project data, embedded image assets, and a preview.
+Prisma is a local-first Windows thumbnail editor built for a focused thumbnail-creation workflow. It supports images, rich text, shapes, layers, nondestructive blur, pixel sampling, native-resolution export, and self-contained project files.
+
+## Compatibility
+
+Prisma is the new name for TobiArt. Existing `.tobiart` projects remain supported; neither the extension nor project format changed. On first launch, Prisma imports the remembered Image Library folder from an existing TobiArt settings directory when present. Projects remain wherever the user saved them.
+
+## Install
+
+Download `Prisma-0.3.0-x64-Setup.exe` from [GitHub Releases](https://github.com/TobiTired/Prisma/releases). The per-user installer does not normally require administrator privileges. It installs Prisma, creates a Start Menu shortcut, offers a desktop shortcut, registers uninstall support, and associates `.tobiart` projects with Prisma.
+
+The Windows build is currently unsigned. Windows SmartScreen may display an unknown-publisher warning. GitHub release metadata includes the installer size and SHA-512 used by Prisma's updater to reject incomplete or corrupt downloads.
+
+## Updates
+
+Installed stable builds check the official `TobiTired/Prisma` GitHub Releases feed at startup. Help → Check for Updates performs a manual check. Updates are never forced: Prisma displays the available version and notes, downloads only after approval, and asks the user to save an unsaved project before installation. Offline and failed checks leave the editor usable.
 
 ## Run from source
 
-1. Install Node.js 22 or newer.
-2. Run `npm install`.
-3. Run `npm run dev`.
+Requires Node.js 22 or newer.
+
+```powershell
+npm ci
+npm test
+npm run dev
+```
 
 ## Build for Windows
 
-Run `npm run dist:win` on Windows. The installer and portable executable are written to `dist-electron`/`dist` according to electron-builder's output.
+```powershell
+npm run dist:win
+```
 
-## Included in V0.1
+Stable releases are created from reviewed `vX.Y.Z` tags. Manual workflow runs build verification artifacts and never publish a release. See [RELEASING.md](RELEASING.md).
+
+## Privacy
+
+Prisma stores settings locally through Electron's per-user application-data directory. Project files and imported images are not uploaded by the application. GitHub is contacted only for release update checks and downloads. No GitHub token or private credential is embedded in the distributed application.
+
+## Major editor features
 
 - YouTube, square, vertical, and custom canvas presets
-- PNG/JPEG/WebP imports, Explorer drag-and-drop, and clipboard image paste
-- Text, images, rectangles, rounded rectangles, ellipses, lines, and triangles
-- Selection handles, moving, resizing, rotation, opacity, flipping, keyboard nudging
-- Ordered, hideable, lockable, renameable layers
-- Undo/redo, duplication, copy/paste, and layer movement
-- Self-contained `.tobiart` save/open workflow
-- Native-resolution PNG/JPEG/WebP export
-
-## V0.1.1 fixes
-
-- Canvas objects now update in place instead of clearing and rebuilding the canvas, eliminating the editor-wide white flash.
-- Corner-scaling text proportionally scales the font and outline; side handles remain available for changing the text container.
-- Text, outline, shape, line, and canvas colors use a live draggable saturation/value field with one undo entry per gesture.
-- Lines render with a real visible stroke and support selection, transforms, color, thickness, layers, save/load, and export.
-- V0.1 `.tobiart` projects remain compatible; legacy zero-width line layers are upgraded to a visible stroke when opened.
-
-## V0.1.2 fixes
-
-- Consecutively created images, text, and shapes become selectable immediately without requiring another object to trigger an update.
-- Async image creation can no longer discard a queued canvas reconciliation pass.
-- Hit-test coordinates refresh as soon as a new object receives its project position and dimensions.
-- Lines use stable rectangular stroke geometry, so moving, resizing, rotating, saving, and reopening preserve their canvas position.
-- The live color picker now renders above the Properties panel and automatically opens upward or downward to remain inside the visible window.
-- Project serialization now stores normalized project-space transforms only; viewport zoom and display geometry never enter `.tobiart` object data.
-- Duplicates retain their offset when space allows and are constrained by rotated canvas bounds near edges.
-- Line rotation snaps precisely to 0°, 90°, 180°, and 270° near cardinal angles.
-
-## V0.2 workflow update
-
-- DaVinci-style drag-scrubbable transform and effect values, with one history entry per gesture.
-- Ctrl+mouse-wheel viewport zoom and 15° rotation snapping.
-- Remembered local image-folder browser and visual shape browser.
-- Independent shape fill/stroke enablement, per-range text colors, nondestructive blur, and canvas eyedropper.
-- Reliable cut/copy/paste for editor objects plus bitmap clipboard paste.
-- Windows `.tobiart` file association and command-line project opening.
-- V0.1/V0.1.1/V0.1.2 projects migrate in memory without changing their saved geometry.
-
-## V0.2.1 fixes
-
-- Simplified the Image Library into a remembered Browse-once thumbnail workflow.
-- Stabilized text rotation so rotating no longer changes the text object's project position.
-- Fixed Ctrl+mouse-wheel zoom and kept it independent from project coordinates.
-- Layer names now require a deliberate double-click to rename; normal clicks select.
-- Fixed rendered-pixel eyedropper sampling and property targeting.
-- Synchronized Layers-panel selection with visible canvas transform controls.
-- Prioritized the active object's interaction bounds over overlapping higher layers.
-- Separated project artwork clipping from transform controls using an expanded editor viewport and per-object project clip paths.
-
-## V0.2.2 fixes
-
-- Image Library folders now populate immediately, while thumbnails load lazily in a bounded queue so one bad file cannot blank or freeze the panel.
-- PNG, JPG/JPEG, and WebP previews support ordinary Windows, spaced, and OneDrive-style paths, with per-image fallback and a useful empty state.
-- All object types now rotate around a preserved visual center in both canvas-handle and numeric-property interactions.
-- File → Open, Welcome-screen Open, Ctrl+O, and Windows `.tobiart` launch routes share one validated loader again.
-- Invalid or incomplete project packages produce a visible error; cancelling Open remains harmless.
-
-## V0.2.4 fixes
-
-- One text layer can contain multiple independently colored character ranges.
-- On-canvas text selections survive focus moving into the color picker.
-- Live color dragging previews only the selected characters as one undo gesture.
-- Fabric's edited character styles are converted back into saved style runs, so
-  insertions, deletions, and replacements preserve surrounding formatting.
-- Rich-text runs remain intact through copy, duplicate, save/reload, and export.
-
-## V0.2.3 fixes
-
-- Physical Ctrl+mouse-wheel input is bridged from Electron into the editor while browser zoom is explicitly cancelled; DOM wheel handling remains as a fallback.
-- Canvas-object copy, cut, and paste now use an in-session object clipboard before checking for external bitmap data.
-- Pasted images, text, shapes, and lines preserve their properties, stay within project bounds, and become selected immediately.
-- Pick Color mode now shows a persistent status banner and crosshair; Escape or right-click cancels without applying a color.
-- Character-range colors are merged into existing style runs instead of replacing them, allowing multiple colors in one text layer.
-- Text insertions and deletions reconcile style runs so nearby formatting remains sensible through edits, undo/redo, save/load, and export.
-
-## Notes
-
-- Installed-font discovery is restricted by the browser security model; V0.1 exposes a dependable list of common Windows fonts, and any installed font can be added to the source list.
-- Export always uses project pixel dimensions, independent of viewport zoom.
+- PNG, JPEG, and WebP import and export
+- Remembered local Image Library folder and visual thumbnail browser
+- Images, rich text, rectangles, rounded rectangles, ellipses, lines, and triangles
+- Mixed-color character ranges within one text layer
+- Selection, transforms, rotation snapping, opacity, flipping, blur, and eyedropper
+- Ordered, hideable, lockable, and renameable layers
+- Undo/redo, duplicate, cut/copy/paste, and keyboard nudging
+- Viewport-independent project coordinates and native-resolution export
+- Compatible V0.1–V0.2.4 `.tobiart` loading

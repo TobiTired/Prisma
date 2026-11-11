@@ -1,4 +1,4 @@
-# TobiArt release workflow
+# Prisma release workflow
 
 Stable builds are published from version tags only. Repository commits and development builds are never offered by the in-app updater.
 

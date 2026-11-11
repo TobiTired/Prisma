@@ -14,11 +14,15 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run privacy:audit
       - run: npm test
       - run: npm run build
       - name: Build installer for verification
@@ -31,7 +35,7 @@ jobs:
         run: npx electron-builder --win nsis portable --publish always --config.directories.output=release
       - uses: actions/upload-artifact@v4
         with:
-          name: TobiArt-Windows-${{ github.ref_name }}
+          name: Prisma-Windows-${{ github.ref_name }}
           path: |
             release/*.exe
             release/latest.yml

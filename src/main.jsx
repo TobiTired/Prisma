@@ -1008,7 +1008,7 @@ function App() {
     >
       <header>
         <div className="brand">
-          T<span>O</span>BIART
+          PR<span>I</span>SMA
         </div>
         <Menus
           save={save}
@@ -1221,7 +1221,7 @@ function Welcome({ start, open }) {
   return (
     <div className="welcome">
       <div className="welcome-card">
-        <div className="logo-mark">T</div>
+        <div className="logo-mark">P</div>
         <h1>
           Create something <em>worth clicking.</em>
         </h1>
@@ -1438,7 +1438,8 @@ function Menus({ save, open, start, undo, redo, checkUpdates }) {
         <summary>Help</summary>
         <div>
           <button onClick={checkUpdates}>Check for Updates…</button>
-          <span className="menu-version">TobiArt v0.3.0</span>
+          <button onClick={() => alert("Prisma v0.3.0\nLocal-first thumbnail editor\nhttps://github.com/TobiTired/Prisma")}>About Prisma</button>
+          <span className="menu-version">Prisma v0.3.0</span>
         </div>
       </details>
     </nav>
@@ -1449,11 +1450,11 @@ function UpdateNotice({ state, close, download, install }) {
   const downloading = state.status === "downloading";
   const downloaded = state.status === "downloaded";
   const title = available
-    ? `TobiArt ${state.version} is available`
+    ? `Prisma ${state.version} is available`
     : downloading
       ? `Downloading update… ${Math.round(state.percent || 0)}%`
       : downloaded
-        ? `TobiArt ${state.version || "update"} is ready`
+        ? `Prisma ${state.version || "update"} is ready`
         : state.status === "development"
           ? "Development build"
           : "Update check unavailable";

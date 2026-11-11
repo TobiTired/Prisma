@@ -15,7 +15,7 @@ function publicUpdateInfo(info) {
 function friendlyUpdateError(error) {
   const message = String(error?.message || error || "Update check failed.");
   if (/net::|ENOTFOUND|ECONN|offline|network/i.test(message))
-    return "TobiArt could not reach GitHub Releases. You can keep working and try again later.";
+    return "Prisma could not reach GitHub Releases. You can keep working and try again later.";
   return message.replace(/^Error:\s*/i, "");
 }
 
