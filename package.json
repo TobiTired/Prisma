@@ -1,0 +1,75 @@
+{
+  "name": "tobiart",
+  "version": "0.3.0",
+  "private": true,
+  "description": "A local-first lightweight graphics editor for Windows",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "build": "vite build",
+    "start": "electron .",
+    "dist:win": "npm run build && electron-builder --win nsis portable --config.directories.output=release",
+    "dist:installer": "npm run build && electron-builder --win nsis --config.directories.output=release",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "electron-updater": "^6.6.2",
+    "fabric": "^7.0.0",
+    "jszip": "^3.10.1",
+    "lucide-react": "^0.468.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "electron": "44.4.3",
+    "electron-builder": "^26.0.12",
+    "vite": "^8.0.0",
+    "vitest": "^3.2.4",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "art.tobi.editor",
+    "productName": "TobiArt",
+    "npmRebuild": false,
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json",
+      "!node_modules/canvas{,/**}"
+    ],
+    "win": {
+      "artifactName": "TobiArt-${version}-${arch}-${name}.${ext}",
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "fileAssociations": [
+        {
+          "ext": "tobiart",
+          "name": "TobiArt Project",
+          "role": "Editor"
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createStartMenuShortcut": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "TobiArt",
+      "deleteAppDataOnUninstall": false,
+      "differentialPackage": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "TobiTired",
+      "repo": "Prisma",
+      "releaseType": "release"
+    },
+    "asar": true
+  }
+}
