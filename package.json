@@ -1,8 +1,8 @@
 {
   "name": "prisma-thumbnail-editor",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
-  "description": "Prisma is a local-first thumbnail editor for Windows",
+  "description": "Lightweight thumbnail editor",
   "author": "TobiTired",
   "main": "electron/main.cjs",
   "scripts": {
@@ -49,8 +49,13 @@
       ],
       "fileAssociations": [
         {
-          "ext": "tobiart",
+          "ext": "prisma",
           "name": "Prisma Project",
+          "role": "Editor"
+        },
+        {
+          "ext": "tobiart",
+          "name": "Legacy TobiArt Project",
           "role": "Editor"
         }
       ]

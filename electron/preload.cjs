@@ -9,6 +9,8 @@ contextBridge.exposeInMainWorld("tobi", {
   getImageFolder: () => ipcRenderer.invoke("get-image-folder"),
   readLibraryImage: (path) => ipcRenderer.invoke("read-library-image", path),
   imageThumbnail: (path) => ipcRenderer.invoke("image-thumbnail", path),
+  getAppInfo: () => ipcRenderer.invoke("get-app-info"),
+  openExternal: (url) => ipcRenderer.invoke("open-external", url),
   checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),
   downloadUpdate: () => ipcRenderer.invoke("download-update"),
   installUpdate: () => ipcRenderer.invoke("install-update"),

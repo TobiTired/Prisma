@@ -13,10 +13,14 @@ function publicUpdateInfo(info) {
 }
 
 function friendlyUpdateError(error) {
-  const message = String(error?.message || error || "Update check failed.");
-  if (/net::|ENOTFOUND|ECONN|offline|network/i.test(message))
-    return "Prisma could not reach GitHub Releases. You can keep working and try again later.";
-  return message.replace(/^Error:\s*/i, "");
+  const technical = String(error?.stack || error?.message || error || "Update check failed.");
+  const offline = /net::|ENOTFOUND|ECONN|offline|network/i.test(technical);
+  return {
+    message: offline
+      ? "Unable to check for updates while offline. You can keep working and try again later."
+      : "Unable to check for updates. Please try again later.",
+    technical,
+  };
 }
 
 module.exports = { normalizeReleaseNotes, publicUpdateInfo, friendlyUpdateError };

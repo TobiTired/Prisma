@@ -25,14 +25,39 @@ jobs:
       - run: npm run privacy:audit
       - run: npm test
       - run: npm run build
-      - name: Build installer for verification
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+      - name: Build Windows release artifacts
         run: npx electron-builder --win nsis portable --publish never --config.directories.output=release
-      - name: Build and publish tagged stable release
+      - name: Verify updater artifacts
+        run: ./tools/verify-release.ps1
+      - name: Create draft release and attach verified artifacts
         if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --win nsis portable --publish always --config.directories.output=release
+        run: |
+          gh release create $env:GITHUB_REF_NAME --draft --verify-tag --title "Prisma $env:GITHUB_REF_NAME" --generate-notes
+          gh release upload $env:GITHUB_REF_NAME release/*.exe release/latest.yml release/*.blockmap
+      - name: Verify published asset set before making release public
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $names = gh release view $env:GITHUB_REF_NAME --json assets --jq '.assets[].name'
+          $version = (Get-Content "package.json" -Raw | ConvertFrom-Json).version
+          $required = @("latest.yml", "Prisma-$version-x64-Setup.exe", "Prisma-$version-x64-Portable.exe", "Prisma-$version-x64-Setup.exe.blockmap")
+          foreach ($name in $required) {
+            if ($names -notcontains $name) { throw "Draft release is missing $name" }
+          }
+          gh release edit $env:GITHUB_REF_NAME --draft=false --latest
+      - name: Verify latest updater metadata is publicly accessible
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        run: |
+          $version = (Get-Content "package.json" -Raw | ConvertFrom-Json).version
+          $url = "https://github.com/TobiTired/Prisma/releases/latest/download/latest.yml"
+          $response = Invoke-WebRequest $url -UseBasicParsing
+          if ($response.StatusCode -ne 200) { throw "Public latest.yml returned HTTP $($response.StatusCode)" }
+          if ($response.Content -notmatch "version:\s+$([regex]::Escape($version))") {
+            throw "Public latest.yml does not identify version $version"
+          }
       - uses: actions/upload-artifact@v4
         with:
           name: Prisma-Windows-${{ github.ref_name }}

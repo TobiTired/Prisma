@@ -114,6 +114,7 @@ function App() {
   const [imageLibrary, setImageLibrary] = useState(null);
   const [eyedropper, setEyedropper] = useState(null);
   const [updateState, setUpdateState] = useState(null);
+  const [aboutInfo, setAboutInfo] = useState(null);
   const canvasEl = useRef();
   const workspaceEl = useRef();
   const projectBackground = useRef();
@@ -621,6 +622,16 @@ function App() {
     }
     await api.installUpdate?.();
   }
+  async function showAbout() {
+    setAboutInfo(
+      (await api.getAppInfo?.()) || {
+        name: "Prisma",
+        version: "Development",
+        description: "Lightweight thumbnail editor",
+        repository: "https://github.com/TobiTired/Prisma",
+      },
+    );
+  }
   function undo() {
     if (!history.length) return;
     const next = history.at(-1);
@@ -1017,6 +1028,7 @@ function App() {
           undo={undo}
           redo={redo}
           checkUpdates={() => api.checkForUpdates?.()}
+          about={showAbout}
         />
         <input
           className="project-name"
@@ -1202,14 +1214,26 @@ function App() {
         </div>
       )}
       {!saved && <div className="unsaved">Unsaved changes</div>}
-      {updateState && !["current", "checking"].includes(updateState.status) && (
+      {aboutInfo && (
+        <AboutModal
+          info={aboutInfo}
+          close={() => setAboutInfo(null)}
+          checkUpdates={() => {
+            setAboutInfo(null);
+            api.checkForUpdates?.();
+          }}
+        />
+      )}
+      {updateState &&
+        (updateState.manual ||
+          !["current", "checking", "error"].includes(updateState.status)) && (
         <UpdateNotice
           state={updateState}
           close={() => setUpdateState(null)}
           download={() => api.downloadUpdate?.()}
           install={installDownloadedUpdate}
         />
-      )}
+        )}
     </div>
   );
 }
@@ -1271,7 +1295,7 @@ function Welcome({ start, open }) {
           </div>
         )}
         <button className="open" onClick={open}>
-          <FolderOpen /> Open .tobiart project
+          <FolderOpen /> Open .prisma or legacy .tobiart project
         </button>
         <footer>Local-first · Your work never leaves your computer</footer>
       </div>
@@ -1411,7 +1435,7 @@ function ShapeBrowser({ add }) {
     </aside>
   );
 }
-function Menus({ save, open, start, undo, redo, checkUpdates }) {
+function Menus({ save, open, start, undo, redo, checkUpdates, about }) {
   return (
     <nav>
       <details>
@@ -1438,8 +1462,7 @@ function Menus({ save, open, start, undo, redo, checkUpdates }) {
         <summary>Help</summary>
         <div>
           <button onClick={checkUpdates}>Check for Updates…</button>
-          <button onClick={() => alert("Prisma v0.3.0\nLocal-first thumbnail editor\nhttps://github.com/TobiTired/Prisma")}>About Prisma</button>
-          <span className="menu-version">Prisma v0.3.0</span>
+          <button onClick={about}>About Prisma</button>
         </div>
       </details>
     </nav>
@@ -1455,6 +1478,10 @@ function UpdateNotice({ state, close, download, install }) {
       ? `Downloading update… ${Math.round(state.percent || 0)}%`
       : downloaded
         ? `Prisma ${state.version || "update"} is ready`
+        : state.status === "checking"
+          ? "Checking for updates…"
+          : state.status === "current"
+            ? "You're running the latest version of Prisma."
         : state.status === "development"
           ? "Development build"
           : "Update check unavailable";
@@ -1464,12 +1491,43 @@ function UpdateNotice({ state, close, download, install }) {
       <strong>{title}</strong>
       {state.releaseNotes && <div className="update-notes">{state.releaseNotes}</div>}
       {state.message && <div className="update-message">{state.message}</div>}
+      {state.technical && (
+        <details className="update-details">
+          <summary>Technical details</summary>
+          <pre>{state.technical}</pre>
+        </details>
+      )}
       <div className="update-actions">
         {available && <button onClick={download}>Download update</button>}
         {downloaded && <button onClick={install}>Save and install</button>}
         <button onClick={close}>{available || downloaded ? "Later" : "Close"}</button>
       </div>
     </section>
+  );
+}
+function AboutModal({ info, close, checkUpdates }) {
+  return (
+    <div className="modal-bg" role="presentation" onMouseDown={close}>
+      <section
+        className="modal about-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="about-prisma-title"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <div className="logo-mark">P</div>
+        <h2 id="about-prisma-title">{info.name || "Prisma"}</h2>
+        <p className="about-version">Version {info.version}</p>
+        <p>{info.description}</p>
+        <button className="about-link" onClick={() => api.openExternal?.(info.repository)}>
+          {info.repository}
+        </button>
+        <div className="modal-actions">
+          <button onClick={close}>Close</button>
+          <button className="primary" onClick={checkUpdates}>Check for Updates</button>
+        </div>
+      </section>
+    </div>
   );
 }
 function Field({ label, children }) {

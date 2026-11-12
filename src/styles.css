@@ -619,13 +619,18 @@ main {
   padding: 5px 10px;
   font-size: 10px;
 }
-.menu-version { display:block; padding:8px 12px; color:#8f919b; font-size:12px; }
 .update-notice { position:fixed; z-index:10000; right:22px; bottom:22px; width:min(390px,calc(100vw - 44px)); padding:18px; border:1px solid #4d5060; border-radius:12px; background:#23252c; color:#f5f5f7; box-shadow:0 18px 50px #0009; }
 .update-notice strong { display:block; padding-right:24px; font-size:15px; }
 .update-close { position:absolute; right:8px; top:6px; border:0; background:transparent; color:#aeb0b8; font-size:22px; }
 .update-notes { margin-top:10px; max-height:180px; overflow:auto; white-space:pre-wrap; color:#c9cad0; font-size:13px; line-height:1.45; }
 .update-message { margin-top:10px; color:#c9cad0; font-size:13px; }
+.update-details { margin-top:10px; color:#aeb0b8; font-size:12px; }
+.update-details pre { max-height:120px; overflow:auto; padding:8px; border-radius:6px; background:#18191e; white-space:pre-wrap; word-break:break-word; }
 .update-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:14px; }
+.about-modal { width:min(420px,calc(100vw - 40px)); text-align:center; }
+.about-modal .logo-mark { margin:0 auto 12px; }
+.about-modal .about-version { color:#c9bbff; font-weight:600; }
+.about-link { border:0; padding:0; background:transparent; color:#a995ff; text-decoration:underline; }
 @media (max-width: 1100px) {
   .right {
     width: 250px;

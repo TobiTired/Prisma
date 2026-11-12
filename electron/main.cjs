@@ -5,6 +5,7 @@ const {
   ipcMain,
   clipboard,
   nativeImage,
+  shell,
 } = require("electron");
 const path = require("path");
 const fs = require("fs/promises");
@@ -14,11 +15,20 @@ const {
   publicUpdateInfo,
   friendlyUpdateError,
 } = require("./update-policy.cjs");
+const {
+  PRIMARY_EXTENSION,
+  PROJECT_EXTENSIONS,
+  isProjectPath,
+  isLegacyProjectPath,
+  prismaPathFor,
+} = require("./project-file.cjs");
 
 let win;
 let updateDownloaded = false;
+let updateCheckInProgress = false;
+let currentCheckManual = false;
 let pendingProjectPath = process.argv.find(
-  (arg) => arg.toLowerCase().endsWith(".tobiart") && !arg.startsWith("--"),
+  (arg) => isProjectPath(arg) && !arg.startsWith("--"),
 );
 const settingsPath = () => path.join(app.getPath("userData"), "settings.json");
 const legacySettingsPaths = () => [
@@ -81,6 +91,13 @@ function createWindow() {
 autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = false;
 autoUpdater.allowPrerelease = false;
+autoUpdater.setFeedURL({
+  provider: "github",
+  owner: "TobiTired",
+  repo: "Prisma",
+  private: false,
+  channel: "latest",
+});
 
 function sendUpdate(status, extra = {}) {
   if (!win?.isDestroyed()) win.webContents.send("update-state", { status, ...extra });
@@ -94,22 +111,38 @@ async function checkForUpdates(manual = false) {
       });
     return { status: "development" };
   }
+  if (updateCheckInProgress) {
+    if (manual)
+      sendUpdate("checking", {
+        manual: true,
+        message: "An update check is already in progress.",
+      });
+    return { status: "checking" };
+  }
+  updateCheckInProgress = true;
+  currentCheckManual = manual;
   try {
     sendUpdate("checking", { manual });
     const result = await autoUpdater.checkForUpdates();
     return { status: "checking", version: result?.updateInfo?.version };
   } catch (error) {
-    const message = friendlyUpdateError(error);
-    sendUpdate("error", { message, manual });
-    return { status: "error", message };
+    const friendly = friendlyUpdateError(error);
+    console.error("Prisma update check failed:", friendly.technical);
+    sendUpdate("error", { ...friendly, manual });
+    return { status: "error", message: friendly.message };
+  } finally {
+    updateCheckInProgress = false;
   }
 }
 
 autoUpdater.on("update-available", (info) =>
-  sendUpdate("available", publicUpdateInfo(info)),
+  sendUpdate("available", { ...publicUpdateInfo(info), manual: currentCheckManual }),
 );
 autoUpdater.on("update-not-available", (info) =>
-  sendUpdate("current", { version: info?.version || app.getVersion() }),
+  sendUpdate("current", {
+    version: info?.version || app.getVersion(),
+    manual: currentCheckManual,
+  }),
 );
 autoUpdater.on("download-progress", (progress) =>
   sendUpdate("downloading", {
@@ -123,7 +156,11 @@ autoUpdater.on("update-downloaded", (info) => {
   sendUpdate("downloaded", publicUpdateInfo(info));
 });
 autoUpdater.on("error", (error) =>
-  sendUpdate("error", { message: friendlyUpdateError(error) }),
+  (() => {
+    const friendly = friendlyUpdateError(error);
+    console.error("Prisma updater error:", friendly.technical);
+    sendUpdate("error", { ...friendly, manual: currentCheckManual });
+  })(),
 );
 app.on("open-file", (event, filePath) => {
   event.preventDefault();
@@ -132,7 +169,7 @@ app.on("open-file", (event, filePath) => {
 });
 if (!app.requestSingleInstanceLock()) app.quit();
 app.on("second-instance", (_event, argv) => {
-  const filePath = argv.find((arg) => arg.toLowerCase().endsWith(".tobiart"));
+  const filePath = argv.find(isProjectPath);
   if (filePath) win?.webContents.send("open-project-path", filePath);
   if (win?.isMinimized()) win.restore();
   win?.focus();
@@ -220,10 +257,13 @@ async function listImageFolder(folder) {
 }
 ipcMain.handle("save-project", async (_, { project, currentPath, saveAs }) => {
   let target = currentPath;
-  if (!target || saveAs) {
+  const migratingLegacyProject = isLegacyProjectPath(target);
+  if (!target || saveAs || migratingLegacyProject) {
     const r = await dialog.showSaveDialog(win, {
-      defaultPath: `${project.name || "Untitled"}.tobiart`,
-      filters: [{ name: "Prisma Project", extensions: ["tobiart"] }],
+      defaultPath: migratingLegacyProject
+        ? prismaPathFor(target)
+        : `${project.name || "Untitled"}${PRIMARY_EXTENSION}`,
+      filters: [{ name: "Prisma Project", extensions: ["prisma"] }],
     });
     if (r.canceled) return null;
     target = r.filePath;
@@ -265,7 +305,10 @@ ipcMain.handle("open-project", async (_, supplied) => {
     if (!target) {
       const r = await dialog.showOpenDialog(win, {
         properties: ["openFile"],
-        filters: [{ name: "Prisma Project", extensions: ["tobiart"] }],
+        filters: [
+          { name: "Prisma Projects", extensions: PROJECT_EXTENSIONS.map((ext) => ext.slice(1)) },
+          { name: "Legacy TobiArt Projects", extensions: ["tobiart"] },
+        ],
       });
       if (r.canceled) return null;
       target = r.filePaths[0];
@@ -319,15 +362,26 @@ ipcMain.handle("clipboard-image", () => {
   return im.isEmpty() ? null : im.toDataURL();
 });
 ipcMain.handle("check-for-updates", () => checkForUpdates(true));
+ipcMain.handle("get-app-info", () => ({
+  name: app.getName(),
+  version: app.getVersion(),
+  description: "Lightweight thumbnail editor",
+  repository: "https://github.com/TobiTired/Prisma",
+}));
+ipcMain.handle("open-external", (_event, url) => {
+  if (url === "https://github.com/TobiTired/Prisma") return shell.openExternal(url);
+  return false;
+});
 ipcMain.handle("download-update", async () => {
   try {
     updateDownloaded = false;
     await autoUpdater.downloadUpdate();
     return { ok: true };
   } catch (error) {
-    const message = friendlyUpdateError(error);
-    sendUpdate("error", { message });
-    return { ok: false, error: message };
+    const friendly = friendlyUpdateError(error);
+    console.error("Prisma update download failed:", friendly.technical);
+    sendUpdate("error", { ...friendly, manual: true });
+    return { ok: false, error: friendly.message };
   }
 });
 ipcMain.handle("install-update", () => {
