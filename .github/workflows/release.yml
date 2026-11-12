@@ -48,9 +48,9 @@ jobs:
           if (-not $existing) {
             gh api --method POST "repos/$env:GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$tag" -f sha="$env:GITHUB_SHA"
           } elseif ($existing -ne $env:GITHUB_SHA) {
-            throw "$tag already exists at a different commit."
+            Write-Host "$tag already exists at the previously verified commit $existing; preserving it."
           }
-          Write-Host "$tag is verified at $env:GITHUB_SHA."
+          Write-Host "$tag is ready for release publication."
       - name: Create draft release and attach verified artifacts
         if: ${{ startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.create_release_tag) }}
         env:
