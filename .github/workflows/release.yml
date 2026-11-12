@@ -84,7 +84,12 @@ jobs:
           $verified = $false
           for ($attempt = 1; $attempt -le 12; $attempt++) {
             $response = Invoke-WebRequest "$url`?verify=$([DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds())" -UseBasicParsing
-            if ($response.StatusCode -eq 200 -and $response.Content -match "version:\s*$([regex]::Escape($version))") {
+            $content = if ($response.Content -is [byte[]]) {
+              [Text.Encoding]::UTF8.GetString($response.Content)
+            } else {
+              [string]$response.Content
+            }
+            if ($response.StatusCode -eq 200 -and $content -match "version:\s*$([regex]::Escape($version))") {
               $verified = $true
               break
             }
